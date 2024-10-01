@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate Retriever</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            width: 70%;
+            padding: 10px;
+            margin-right: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .error {
+            color: #e74c3c;
+            margin-bottom: 10px;
+        }
+        .result {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .modulus-container {
+            position: relative;
+            margin-bottom: 15px;
+        }
+        .modulus {
+            background-color: #eee;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+        .copy-btn:hover {
+            background-color: #27ae60;
+        }
+    </style>
+</head>
+<body>
+    <h1>Certificate Retriever</h1>
+    <form id="certForm">
+        <input type="text" id="ipAddress" placeholder="Enter IP address of Android/Google TV device" required>
+        <button type="submit">Get Certificate</button>
+    </form>
+    <div id="error" class="error"></div>
+    <div id="result" class="result" style="display:none;">
+        <h3>Device Public Key Modulus:</h3>
+        <div class="modulus-container">
+            <pre id="modulus" class="modulus"></pre>
+            <button class="copy-btn" onclick="copyModulus()">Copy</button>
+        </div>
+        <h3>Exponent:</h3>
+        <p id="exponent"></p>
+    </div>
+
+    <script>
+        document.getElementById('certForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            var ipAddress = document.getElementById('ipAddress').value;
+            fetch('/get_cert', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ ip_address: ipAddress })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('modulus').textContent = data.modulus;
+                    document.getElementById('exponent').textContent = data.exponent;
+                    document.getElementById('result').style.display = 'block';
+                    document.getElementById('error').textContent = '';
+                } else {
+                    document.getElementById('error').textContent = data.error;
+                    document.getElementById('result').style.display = 'none';
+                }
+            })
+            .catch(error => {
+                document.getElementById('error').textContent = 'An error occurred while communicating with the server.';
+                document.getElementById('result').style.display = 'none';
+            });
+        });
+
+        function copyModulus() {
+            var modulusText = document.getElementById('modulus').textContent;
+            navigator.clipboard.writeText(modulusText).then(function() {
+                alert('Modulus copied to clipboard!');
+            }, function(err) {
+                console.error('Could not copy text: ', err);
+            });
+        }
+    </script>
+</body>
+</html>
